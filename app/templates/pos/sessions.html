@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _("Sessions - Point of Sale") }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-history"></i> {{ _("Sessions Log") }}</h2>
+        <a href="{{ url_for('pos.open_session') }}" class="btn btn-primary">
+            <i class="fas fa-door-open"></i> {{ _("Open New Session") }}
+        </a>
+    </div>
+
+    <!-- إحصائيات سريعة -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">{{ _("Open Sessions") }}</h6>
+                    <h3>{{ sessions.items|selectattr('status', 'equalto', 'open')|list|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title">{{ _("Closed Sessions Today") }}</h6>
+                    <h3>{{ sessions.items|selectattr('status', 'equalto', 'closed')|list|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-title">{{ _("Total Sales Today") }}</h6>
+                    <h3>{{ sessions.items|sum(attribute='total_sales')|round(2) }} {{ currency_symbol }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h6 class="card-title">{{ _("Total Orders Today") }}</h6>
+                    <h3>
+                        {% set total_orders = namespace(count=0) %}
+                        {% for session in sessions.items %}
+                            {% set total_orders.count = total_orders.count + session.orders|length %}
+                        {% endfor %}
+                        {{ total_orders.count }}
+                    </h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- جدول الورديات -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-list"></i> {{ _("Sessions List") }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>{{ _("Session Number") }}</th>
+                            <th>{{ _("Cashier") }}</th>
+                            <th>{{ _("Warehouse") }}</th>
+                            <th>{{ _("Opening Time") }}</th>
+                            <th>{{ _("Closing Time") }}</th>
+                            <th>{{ _("Opening Balance") }}</th>
+                            <th>{{ _("Closing Balance") }}</th>
+                            <th>{{ _("Total Sales") }}</th>
+                            <th>{{ _("Status") }}</th>
+                            <th>{{ _("Actions") }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for session in sessions.items %}
+                        <tr>
+                            <td>{{ loop.index + (sessions.page - 1) * sessions.per_page }}</td>
+                            <td><strong>{{ session.session_number }}</strong></td>
+                            <td>{{ session.cashier.username }}</td>
+                            <td>{{ session.warehouse.name if session.warehouse else '-' }}</td>
+                            <td>{{ session.opening_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                {% if session.closing_time %}
+                                {{ session.closing_time.strftime('%Y-%m-%d %H:%M') }}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ session.opening_balance|round(2) }} {{ currency_symbol }}</td>
+                            <td>
+                                {% if session.closing_balance %}
+                                {{ session.closing_balance|round(2) }} {{ currency_symbol }}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td><strong class="text-success">{{ session.total_sales|round(2) }} {{ currency_symbol }}</strong></td>
+                            <td>
+                                {% if session.status == 'open' %}
+                                <span class="badge bg-success">{{ _("Open") }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ _("Closed") }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-cog"></i> {{ _("Actions") }}
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('pos.session_details', id=session.id) }}">
+                                                <i class="fas fa-eye"></i> {{ _("Details") }}
+                                            </a>
+                                        </li>
+                                        {% if session.status == 'open' and session.cashier_id == current_user.id %}
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('pos.index') }}">
+                                                <i class="fas fa-cash-register"></i> {{ _("Continue Selling") }}
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('pos.print_session_report', id=session.id) }}" target="_blank">
+                                                <i class="fas fa-print"></i> {{ _("Print Report") }}
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item text-danger" href="#"
+                                               onclick="confirmDelete({{ session.id }}, '{{ session.session_number }}'); return false;">
+                                                <i class="fas fa-trash"></i> {{ _("Delete") }}
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="11" class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                {{ _("No sessions found") }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if sessions.pages > 1 %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {% if not sessions.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('pos.sessions', page=sessions.prev_num) if sessions.has_prev else '#' }}">
+                            {{ _("Previous") }}
+                        </a>
+                    </li>
+
+                    {% for page_num in sessions.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                        {% if page_num %}
+                            <li class="page-item {% if page_num == sessions.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('pos.sessions', page=page_num) }}">{{ page_num }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+
+                    <li class="page-item {% if not sessions.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('pos.sessions', page=sessions.next_num) if sessions.has_next else '#' }}">
+                            {{ _("Next") }}
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Hidden form for delete -->
+<form id="deleteSessionForm" method="POST" style="display: none;">
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete(sessionId, sessionNumber) {
+    if (confirm("{{ _('Are you sure you want to delete this session?') }}\n" + sessionNumber)) {
+        const form = document.getElementById('deleteSessionForm');
+        form.action = "{{ url_for('pos.delete_session', id=0) }}".replace('0', sessionId);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}
+

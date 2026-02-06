@@ -1,0 +1,42 @@
+{
+  "6F10-C3E8-39B0-C85B": {
+    "company": "calc",
+    "expiry": "2026-03-16",
+    "created": "2026-02-04 00:57:42",
+    "duration_days": 40,
+    "machine_id": "D41D8CD98F00B204",
+    "license_type": "Standard",
+    "max_users": 10,
+    "features": [
+      "all"
+    ],
+    "status": "active",
+    "activation_count": 0,
+    "last_check": null,
+    "username": "ahmed",
+    "password": "121212",
+    "contact_email": "ahmed@kkj",
+    "contact_phone": "9955460",
+    "notes": ""
+  },
+  "BB64-1CCD-AD70-8E6B": {
+    "company": "aaa",
+    "expiry": "2027-02-04",
+    "created": "2026-02-04 11:34:02",
+    "duration_days": 365,
+    "machine_id": "D41D8CD98F00B204",
+    "license_type": "Standard",
+    "max_users": 10,
+    "features": [
+      "all"
+    ],
+    "status": "active",
+    "activation_count": 0,
+    "last_check": null,
+    "username": "admin",
+    "password": "admin123",
+    "contact_email": "afff@k",
+    "contact_phone": "154510",
+    "notes": ""
+  }
+}

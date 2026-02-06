@@ -1,0 +1,24 @@
+databases:
+  - name: ded-erp-db
+    databaseName: ded_erp
+    plan: free
+
+services:
+  - type: web
+    name: ded-erp-system
+    runtime: python
+    plan: free
+    buildCommand: chmod +x build.sh && ./build.sh
+    startCommand: gunicorn run:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ded-erp-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHON_VERSION
+        value: 3.11.0
+
